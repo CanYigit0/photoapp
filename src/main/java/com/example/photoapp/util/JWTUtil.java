@@ -13,20 +13,18 @@ import java.util.Date;
 @Component
 public class JWTUtil {
 
-    private String secret = "mySecretKey";
-
-    @Value("${app.jwt.secret}")
+    @Value("${app.jwt.secret:MyUltraStrongSecretKeyForJwt123456789!}") // 32+ karakter
     private String secretKey;
 
-    @Value("${app.jwt.expiration}")
+    @Value("${app.jwt.expiration:86400000}") // 1 gün (ms)
     private long jwtExpirationMs;
 
     // Token üret
-    public String generateToken(String email) {
+    public String generateToken(String username) {
         Key key = Keys.hmacShaKeyFor(secretKey.getBytes(StandardCharsets.UTF_8));
 
         return Jwts.builder()
-                .setSubject(email)
+                .setSubject(username)
                 .setIssuedAt(new Date())
                 .setExpiration(new Date(System.currentTimeMillis() + jwtExpirationMs))
                 .signWith(key)
@@ -44,8 +42,8 @@ public class JWTUtil {
         }
     }
 
-    // Token’dan email al
-    public String getEmailFromToken(String token) {
+    // Token’dan username al
+    public String getUsernameFromToken(String token) {
         Key key = Keys.hmacShaKeyFor(secretKey.getBytes(StandardCharsets.UTF_8));
         Claims claims = Jwts.parserBuilder()
                 .setSigningKey(key)
@@ -55,9 +53,11 @@ public class JWTUtil {
         return claims.getSubject();
     }
 
+    // Tüm claim’leri al
     public Claims extractAllClaims(String token) {
+        Key key = Keys.hmacShaKeyFor(secretKey.getBytes(StandardCharsets.UTF_8));
         return Jwts.parserBuilder()
-                .setSigningKey(secret.getBytes())
+                .setSigningKey(key)
                 .build()
                 .parseClaimsJws(token)
                 .getBody();
